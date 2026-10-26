@@ -3,8 +3,8 @@ local Workspace=game:GetService("Workspace")
 local localPlayer=assert(Players.LocalPlayer,"stain.best UI requires a client")
 local function createUI()
  local Input=game:GetService("UserInputService")
- local library={APIVersion=1,Build=7,Options={},Toggles={},Scheme={},Unloaded=false,signals={},unloads={},CornerRadius=0}
- local C={background=Color3.fromRGB(15,15,15),panel=Color3.fromRGB(18,18,18),control=Color3.fromRGB(23,23,23),edge=Color3.fromRGB(32,32,32),text=Color3.fromRGB(210,210,210),muted=Color3.fromRGB(139,139,139),accent=Color3.fromRGB(157,34,61)}
+ local library={APIVersion=1,Build=8,Options={},Toggles={},Scheme={},Unloaded=false,signals={},unloads={},CornerRadius=0}
+ local C={background=Color3.fromRGB(15,15,15),panel=Color3.fromRGB(18,18,18),control=Color3.fromRGB(23,23,23),edge=Color3.fromRGB(32,32,32),text=Color3.fromRGB(234,234,234),muted=Color3.fromRGB(179,179,179),activeText=Color3.fromRGB(220,112,134),accent=Color3.fromRGB(157,34,61)}
  local gui,window,popup,activeDrag,keyCapture,activeSettings
  local makeSettings
  local popupSignals={}
@@ -21,12 +21,12 @@ local function createUI()
   return new("Frame",parent,values)
  end
  local function label(parent,text,properties)
-  local values={BackgroundTransparency=1,BorderSizePixel=0,Text=text or "",TextSize=12,Font=Enum.Font.Code,TextColor3=C.text,TextXAlignment=Enum.TextXAlignment.Left,TextYAlignment=Enum.TextYAlignment.Center,TextTruncate=Enum.TextTruncate.AtEnd}
+  local values={BackgroundTransparency=1,BorderSizePixel=0,Text=text or "",TextSize=13,Font=Enum.Font.Code,TextColor3=C.text,TextXAlignment=Enum.TextXAlignment.Left,TextYAlignment=Enum.TextYAlignment.Center,TextTruncate=Enum.TextTruncate.AtEnd}
   for key,value in pairs(properties or {})do values[key]=value end
   return new("TextLabel",parent,values)
  end
  local function button(parent,text,properties)
-  local values={BorderSizePixel=0,BackgroundColor3=C.control,Text=text or "",TextSize=12,Font=Enum.Font.Code,TextColor3=C.text,AutoButtonColor=false}
+  local values={BorderSizePixel=0,BackgroundColor3=C.control,Text=text or "",TextSize=13,Font=Enum.Font.Code,TextColor3=C.text,AutoButtonColor=false}
   for key,value in pairs(properties or {})do values[key]=value end
   return new("TextButton",parent,values)
  end
@@ -34,7 +34,14 @@ local function createUI()
   return new("UIStroke",object,{Color=color or C.edge,Thickness=1,ApplyStrokeMode=Enum.ApplyStrokeMode.Border})
  end
  local function gradient(object,top,bottom)
-  new("UIGradient",object,{Rotation=90,Color=ColorSequence.new(top,bottom)})
+  -- A UIGradient on a TextButton darkens its text too. Shade a separate backing.
+  local target=object
+  if object:IsA("TextButton")then
+   target=frame(object.Parent,{Name="ControlBackground",Position=object.Position,Size=object.Size,BackgroundColor3=Color3.new(1,1,1),ZIndex=object.ZIndex})
+   object.BackgroundTransparency=1
+   object.ZIndex=target.ZIndex+1
+  end
+  new("UIGradient",target,{Rotation=90,Color=ColorSequence.new(top,bottom)})
  end
  local function closePopup()
   for _,c in ipairs(popupSignals)do c:Disconnect()end;table.clear(popupSignals)
@@ -187,7 +194,7 @@ local function createUI()
  makeSettings=function(row,title)
   local shell=frame(gui,{Name="SettingsPopover",Size=UDim2.fromOffset(272,45),Visible=false,ZIndex=30})
   edge(shell,C.accent)
-  label(shell,title,{Position=UDim2.fromOffset(7,1),Size=UDim2.new(1,-30,0,21),TextColor3=C.accent,ZIndex=31})
+  label(shell,title,{Position=UDim2.fromOffset(7,1),Size=UDim2.new(1,-30,0,21),TextColor3=C.text,ZIndex=31})
   local close=button(shell,"x",{BackgroundTransparency=1,Position=UDim2.new(1,-23,0,1),Size=UDim2.fromOffset(20,20),ZIndex=31})
   local body=new("ScrollingFrame",shell,{Position=UDim2.fromOffset(6,24),Size=UDim2.new(1,-12,1,-29),BackgroundTransparency=1,BorderSizePixel=0,ScrollBarThickness=2,ScrollBarImageColor3=C.accent,CanvasSize=UDim2.new(),AutomaticCanvasSize=Enum.AutomaticSize.Y,ScrollingDirection=Enum.ScrollingDirection.Y,ClipsDescendants=true,ZIndex=31})
   new("UIListLayout",body,{SortOrder=Enum.SortOrder.LayoutOrder})
@@ -240,7 +247,7 @@ local function createUI()
   window=frame(gui,{Name="Window",Size=UDim2.fromOffset(width,height),Position=UDim2.fromOffset(math.max(12,(view.X-width)*.5),math.max(30,(view.Y-height)*.5)),BackgroundColor3=C.background})
   edge(window,Color3.fromRGB(43,43,43))
   frame(window,{Size=UDim2.new(1,0,0,1),BackgroundColor3=C.accent})
-  local title=label(window,'<font color="#9d223d">stain.best</font>  -  [ESP]',{Position=UDim2.fromOffset(10,5),Size=UDim2.new(1,-40,0,23),TextSize=12,TextColor3=C.text,RichText=true,Active=true})
+  local title=label(window,'<font color="#dc7086">stain.best</font>',{Position=UDim2.fromOffset(10,5),Size=UDim2.new(1,-40,0,23),TextSize=12,TextColor3=C.text,RichText=true,Active=true})
   local close=button(window,"x",{BackgroundTransparency=1,Position=UDim2.new(1,-25,0,3),Size=UDim2.fromOffset(20,20),TextColor3=C.muted})
   listen(close.Activated,function()library:Unload()end)
   local startMouse,startPosition
@@ -286,7 +293,7 @@ local function createUI()
    local record={button=tabButton,page=page,tab=tab};tabs[index]=record
    local function select()
     closeSettings()
-    for _,t in ipairs(tabs)do t.page.Visible=t==record;t.button.TextColor3=t==record and C.accent or C.muted end
+    for _,t in ipairs(tabs)do t.page.Visible=t==record;t.button.TextColor3=t==record and C.activeText or C.muted end
     selected=record
    end
    listen(tabButton.Activated,select)
@@ -331,3 +338,4 @@ local function createUI()
  return library
 end
 return createUI()
+
