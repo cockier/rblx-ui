@@ -3,7 +3,7 @@ local Workspace=game:GetService("Workspace")
 local localPlayer=assert(Players.LocalPlayer,"stain.best UI requires a client")
 local function createUI()
  local Input=game:GetService("UserInputService")
- local library={APIVersion=1,Build=8,Options={},Toggles={},Scheme={},Unloaded=false,signals={},unloads={},CornerRadius=0}
+ local library={APIVersion=1,Build=9,Options={},Toggles={},Scheme={},Unloaded=false,signals={},unloads={},CornerRadius=0}
  local C={background=Color3.fromRGB(15,15,15),panel=Color3.fromRGB(18,18,18),control=Color3.fromRGB(23,23,23),edge=Color3.fromRGB(32,32,32),text=Color3.fromRGB(234,234,234),muted=Color3.fromRGB(179,179,179),activeText=Color3.fromRGB(220,112,134),accent=Color3.fromRGB(157,34,61)}
  local gui,window,popup,activeDrag,keyCapture,activeSettings
  local makeSettings
@@ -171,9 +171,10 @@ local function createUI()
   end
   function value:AddKeyPicker(id,info)
    content.Size=UDim2.new(1,-95,1,0)
-   local field=button(row,"["..info.Default.."]",{BackgroundTransparency=1,Position=UDim2.new(1,-95,0,0),Size=UDim2.fromOffset(95,19),TextXAlignment=Enum.TextXAlignment.Right})
+   local function displayKey(v)return v:gsub("MouseButton","M")end
+   local field=button(row,"["..displayKey(info.Default).."]",{BackgroundTransparency=1,Position=UDim2.new(1,-95,0,0),Size=UDim2.fromOffset(95,19),TextXAlignment=Enum.TextXAlignment.Right})
    local bind=control(row,info.Default,id)
-   bind.paint=function(v)field.Text="["..v.."]"end
+   bind.paint=function(v)field.Text="["..displayKey(v).."]"end
    listen(field.Activated,function()field.Text="[...]";keyCapture=bind end)
    return value
   end
@@ -228,6 +229,8 @@ local function createUI()
   end)
   return settings
  end
+ function library:IsCapturingInput()return keyCapture~=nil end
+ function library:WasCaptured(input)return self.LastCapturedInput==input end
  function library:UpdateColorsUsingRegistry()end
  function library:OnUnload(callback)self.unloads[#self.unloads+1]=callback end
  function library:Unload()
@@ -316,17 +319,21 @@ local function createUI()
    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then activeDrag=nil;startMouse=nil end
   end)
   listen(Input.InputBegan,function(input,processed)
+   local kind=tostring(input.UserInputType):match("[^.]+$")
+   if keyCapture and(kind=="Keyboard"or kind=="MouseButton1"or kind=="MouseButton2"or kind=="MouseButton3")then
+    local bind=keyCapture;keyCapture=nil;library.LastCapturedInput=input
+    if input.KeyCode==Enum.KeyCode.Escape then bind.paint(bind.Value)
+    else bind:SetValue(kind=="Keyboard"and input.KeyCode.Name or kind)end
+    return
+   end
    if input.UserInputType==Enum.UserInputType.Keyboard then
-    if keyCapture then
-     local bind=keyCapture;keyCapture=nil
-     if input.KeyCode==Enum.KeyCode.Escape then bind.paint(bind.Value)else bind:SetValue(input.KeyCode.Name)end
-     return
-    end
     if not processed and not Input:GetFocusedTextBox()then
      local bind=library.ToggleKeybind
-     if input.KeyCode.Name==(bind and bind.Value or "RightShift")then window.Visible=not window.Visible;closeSettings()end
+     if input.KeyCode.Name==(bind and bind.Value or "RightShift")then library.LastCapturedInput=input;window.Visible=not window.Visible;closeSettings()end
     end
-   elseif input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+   elseif kind=="MouseButton1"or kind=="MouseButton2"or kind=="MouseButton3"or kind=="Touch"then
+    local bind=library.ToggleKeybind
+    if not processed and bind and bind.Value==kind then library.LastCapturedInput=input;window.Visible=not window.Visible;closeSettings();return end
     local point=Vector2.new(input.Position.X,input.Position.Y)
     local inPopup=popup and inside(popup,point)
     if popup and not inPopup then closePopup()end
