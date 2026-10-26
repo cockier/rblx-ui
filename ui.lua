@@ -3,7 +3,7 @@ local Workspace=game:GetService("Workspace")
 local localPlayer=assert(Players.LocalPlayer,"stain.best UI requires a client")
 local function createUI()
  local Input=game:GetService("UserInputService")
- local library={APIVersion=1,Build=9,Options={},Toggles={},Scheme={},Unloaded=false,signals={},unloads={},CornerRadius=0}
+ local library={APIVersion=1,Build=10,Options={},Toggles={},Scheme={},Unloaded=false,signals={},unloads={},CornerRadius=0}
  local C={background=Color3.fromRGB(15,15,15),panel=Color3.fromRGB(18,18,18),control=Color3.fromRGB(23,23,23),edge=Color3.fromRGB(32,32,32),text=Color3.fromRGB(234,234,234),muted=Color3.fromRGB(179,179,179),activeText=Color3.fromRGB(220,112,134),accent=Color3.fromRGB(157,34,61)}
  local gui,window,popup,activeDrag,keyCapture,activeSettings
  local makeSettings
@@ -294,6 +294,7 @@ local function createUI()
    function tab:AddLeftGroupbox(name)return group("Left",name)end
    function tab:AddRightGroupbox(name)return group("Right",name)end
    local record={button=tabButton,page=page,tab=tab};tabs[index]=record
+   for _,entry in ipairs(tabs)do entry.button.Size=UDim2.new(1/#tabs,0,1,0)end
    local function select()
     closeSettings()
     for _,t in ipairs(tabs)do t.page.Visible=t==record;t.button.TextColor3=t==record and C.activeText or C.muted end
